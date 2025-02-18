@@ -35,20 +35,32 @@
                             'disable' => !$transaction_kelas->status ? false : true,
                         ])
 
-                        <div id="Normal-scheme" class="mt-10 container-scheme ">
+                        <div id="Normal-scheme" class="mt-10 container-scheme hidden">
 
                             @php
                                 $is_done = 1;
+                                $pivots_array = [];
+                                // $pivots_array_2 = [];
                             @endphp
 
                             <h5 class="ms-4 font-bold text-xl text-black">Skema Normal</h5>
                             @foreach ($pivots as $item)
                                 @if ($item->day_number >= 1 && $item->trainer_id_1)
                                     @php
-                                        echo $item->day_number;
+                                        // echo $item->day_number;
                                         $is_done++;
                                     @endphp
                                 @endif
+                                @php
+                                    if ($item->trainer_id_1) {
+                                        $pivots_array[$item->day_number][] =
+                                            $item->trainer_id_1 . '|' . $item->trainer_name_1;
+                                    }
+                                    if ($item->trainer_id_2) {
+                                        $pivots_array[$item->day_number][] =
+                                            $item->trainer_id_2 . '|' . $item->trainer_name_2;
+                                    }
+                                @endphp
 
                                 <form action="" method="POST" class="mt-5 bg-neutral-100 shadow border mx-5 p-4 ">
                                     <h6 class="text-black font-semibold ms-6 text-lg">Hari {{ $item->day_number }}</h6>
@@ -57,6 +69,7 @@
                                             'name' => 'trainer_1',
                                             'commission' => 'komisi_1',
                                             'day_number' => "day-$item->day_number",
+                                            'day' => "$item->day_number",
                                             'total' => $item->commission_1,
                                         ],
                                     ])
@@ -65,16 +78,19 @@
                                             'name' => 'trainer_2',
                                             'commission' => 'komisi_2',
                                             'day_number' => "day-2-$item->day_number",
+                                            'day' => "$item->day_number",
                                             'total' => $item->commission_2,
                                         ],
                                     ])
-                                    <div class="flex justify-end">
-                                        <input type="hidden" name="type" value="normal">
-                                        <input type="hidden" name="scheme" value="Normal">
-                                        <input type="hidden" name="day" value="{{ $item->day_number }}">
-                                        <button type="submit"
-                                            class="btn btn-sm btn-error text-white me-5 @if ($is_done < $item->day_number) btn-disabled @endif ">Simpan</button>
-                                    </div>
+                                    @if ($title !== 'Edit Payment Kelas & Jadwal')
+                                        <div class="flex justify-end">
+                                            <input type="hidden" name="type" value="normal">
+                                            <input type="hidden" name="scheme" value="Normal">
+                                            <input type="hidden" name="day" value="{{ $item->day_number }}">
+                                            <button type="submit"
+                                                class="btn btn-sm btn-error text-white me-5 @if ($is_done < $item->day_number) btn-disabled @endif ">Simpan</button>
+                                        </div>
+                                    @endif
                                 </form>
                             @endforeach
                         </div>
@@ -95,11 +111,45 @@
                                 ],
                             ])
                         </div>
+                        <form action="" method="POST">
+                            @csrf
+                            @if ($title === 'Edit Payment Kelas & Jadwal')
+                                <div class="container p-4">
+                                    <h6 class="font-bold text-lg text-black text-center mt-5">Skema Komisi:
+                                        {{ $transaction_kelas->scheme }}
+                                    </h6>
+                                    <h6 class="font-bold text-lg text-black text-center">Jumlah Hari:
+                                        {{ $transaction_kelas->day }}
+                                    </h6>
+                                    <h6 class="font-bold text-lg text-black text-center">Total Komisi:
+                                        {{ number_format($transaction_kelas->total) }}
+                                    </h6>
+                                    @include('components/select', [
+                                        'name' => 'Status Pembayaran',
+                                        'value' => 'status',
+                                        'options' => [
+                                            (object) [
+                                                'title' => 'Pending',
+                                                'value' => 'pending',
+                                            ],
+                                            (object) [
+                                                'title' => 'Terbayar',
+                                                'value' => 'terbayar',
+                                            ],
+                                        ],
+                                        'data' => $transaction_kelas ?? null,
+                                        'disable' => $transaction_kelas->status ? false : true,
+                                    ])
+                                </div>
+                            @endif
 
-                        <div class="ms-3 mt-4 pb-3">
-                            {{-- <button type="submit" class="btn btn-accent btn-sm">Simpan</button> --}}
-                            <a href="{{ URL::previous() }}" class="btn btn-neutral btn-sm">Kembali</a>
-                        </div>
+                            <div class="ms-3 mt-10 pb-3">
+                                @if ($title === 'Edit Payment Kelas & Jadwal')
+                                    <button type="submit" class="btn btn-accent btn-sm">Simpan</button>
+                                @endif
+                                <a href="{{ URL::previous() }}" class="btn btn-neutral btn-sm">Kembali</a>
+                            </div>
+                        </form>
 
                     </div>
                 </div>
@@ -122,52 +172,47 @@
         })
     </script>
 
+    @for ($i = 1; $i <= $transaction_kelas->day; $i++)
+        <script>
+            $(document).ready(function() {
+                let i = @json($i);
+                const cb_vals = @json(old('trainer_1.' . $i)) ?? null;
+                const cb_vals2 = @json(old('trainer_2.' . $i)) ?? null;
 
-    <script>
-        const tk = @json($transaction_kelas);
-        const days = tk.day
-
-        function changeVal(index) {
-            const vals = @json(old('trainer_1')) ?? null;
-            const vals2 = @json(old('trainer_2')) ?? null;
-            console.log({
-                vals,
-                vals2
-            });
-
-            if (vals) {
-                $(`#day-${index}`).val(vals).trigger("change")
-            }
-            if (vals2) {
-                $(`#day-2-${index}`).val(vals).trigger("change")
-            }
-        }
-
-        for (let i = 1; i <= days; i++) {
-            $(`#day-${i}`).select2({
-                data: data_trainers
+                $(`#day-${i}`).select2({
+                    data: data_trainers
+                })
+                $(`#day-2-${i}`).select2({
+                    data: data_trainers
+                })
+                if (cb_vals) {
+                    $(`#day-${i}`).val(cb_vals).trigger("change")
+                }
+                if (cb_vals2) {
+                    $(`#day-2-${i}`).val(cb_vals).trigger("change")
+                }
             })
-            $(`#day-2-${i}`).select2({
-                data: data_trainers
-            })
+        </script>
+        @if (isset($pivots_array[$i]))
+            <script>
+                $(document).ready(function() {
+                    let i = @json($i);
+                    const array = @json($pivots_array[$i]) ?? null;
+                    let vals = array[0] ?? null;
+                    let vals_2 = array[1] ?? null;
+                    if (vals) {
+                        $(`#day-${i}`).val(vals).trigger("change")
+                    }
+                    if (vals_2) {
+                        $(`#day-2-${i}`).val(vals_2).trigger("change")
+                    }
+                })
+            </script>
+        @endif
+    @endfor
 
-            changeVal(i)
-        }
 
 
-        $(document).ready(function() {
-            $(document).on('change', '#scheme', function() {
-                $('.container-scheme').addClass('hidden')
-                $(`#${$(this).val()}-scheme`).removeClass('hidden');
-            })
-            const scheme = @json(old('scheme'));
-            if (scheme) {
-                $('#scheme').val(scheme)
-                $('.container-scheme').addClass('hidden')
-                $(`#${scheme}-scheme`).removeClass('hidden');
-            }
-        })
-    </script>
 
 
 
@@ -186,11 +231,26 @@
 
                     $(`#trainer`).val(value).trigger("change")
                 }
+                const scheme = @json($transaction_kelas->scheme);
+                $('#scheme').val(scheme)
+                $('.container-scheme').addClass('hidden')
+                $(`#${scheme}-scheme`).removeClass('hidden');
             })
         </script>
     @else
         <script>
             $(document).ready(function() {
+
+                $(document).on('change', '#scheme', function() {
+                    $('.container-scheme').addClass('hidden')
+                    $(`#${$(this).val()}-scheme`).removeClass('hidden');
+                })
+                const scheme = @json(old('scheme'));
+                if (scheme) {
+                    $('#scheme').val(scheme)
+                    $('.container-scheme').addClass('hidden')
+                    $(`#${scheme}-scheme`).removeClass('hidden');
+                }
 
                 $('#trainer').select2({
                     data: data_trainers
@@ -201,8 +261,6 @@
                 if (trainer) {
                     $(`#trainer`).val(trainer).trigger("change")
                 }
-
-
 
             })
         </script>

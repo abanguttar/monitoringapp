@@ -59,7 +59,7 @@
                 </li>
 
                 <li class="flex justify-center mx-auto mt-5">
-                    <h5 class="text-center font-semibold text-md" >KOMISI MITRA</h5>
+                    <h5 class="text-center font-semibold text-md">KOMISI MITRA</h5>
                 </li>
                 <li>
                     {{-- <div className="btn btn-light --collapse bg-base-200">
@@ -72,9 +72,11 @@
                         </div>
                     </div> --}}
                     <a href="/AplikasiMonitoring/komisi-trainer/kelas-jadwal" class="btn btn-light p-2"
-                    id="nav-komisi-trainer-kelas-jadwal"
-                    >List
+                        id="nav-komisi-trainer-kelas-jadwal">List
                         Kelas & Jadwal</a>
+                    <a href="/AplikasiMonitoring/komisi-trainer/list-komisi" class="btn btn-light p-2"
+                        id="nav-komisi-trainer-list-komisi">List
+                        Komisi Trainer</a>
                 </li>
             @else
                 <li>

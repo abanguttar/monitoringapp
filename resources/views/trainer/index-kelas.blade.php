@@ -22,33 +22,62 @@
                                 </div>
                                 {{-- Year Picker --}}
 
-                                @include('components/select2', [
-                                    'name' => 'Cari Berdasarkan Nama Kelas',
-                                    'value' => 'class_name',
-                                    'options' => $listClassName,
-                                ])
 
-                                @include('components/select-kelas-jadwal', [
-                                    'data' => $kelas ?? null,
-                                ])
+                                @if ($title !== 'List Komisi Trainer')
+                                    @include('components/select2', [
+                                        'name' => 'Cari Berdasarkan Nama Kelas',
+                                        'value' => 'class_name',
+                                        'options' => $listClassName,
+                                    ])
+                                    @include('components/select-kelas-jadwal', [
+                                        'data' => $kelas ?? null,
+                                    ])
+                                @else
+                                    @include('components/select2', [
+                                        'name' => 'Cari Berdasarkan Nama Trainer',
+                                        'value' => 'name',
+                                        'options' => $trainers,
+                                    ])
+                                @endif
                             </div>
 
                             <div class="ml-2 mt-3">
-                                <button type="button" class="btn btn-primary btn-sm" id="btn-edit">Ubah</button>
+                                @if ($title !== 'List Komisi Trainer')
+                                    <button type="button" class="btn btn-primary btn-sm" id="btn-edit">Ubah</button>
+                                    <button type="button" class="btn btn-success btn-sm" id="btn-payment">Ubah Status
+                                        Pembayaran</button>
+                                @endif
                                 <button type="submit" class="btn btn-info btn-sm">Cari</button>
                             </div>
 
 
 
                         </form>
+                        @if ($title === 'List Komisi Trainer')
+                            <div class="container-total mt-5 mb-5 flex justify-center font-bold text-black text-lg">
+                                <ul>
+                                    <li>
+                                        <h1>Total Pembayaran Komisi : Rp. {{ number_format($total) }}
+                                        </h1>
+                                    </li>
+                                </ul>
+                            </div>
+                        @endif
                         <table class="table mt-5">
                             <thead class="bg-black text-white">
                                 <tr>
                                     <th>No</th>
+                                    @if ($title === 'List Komisi Trainer')
+                                        <th>Nama Trainer</th>
+                                    @endif
                                     <th>Nama Kelas</th>
                                     <th>Nama Jadwal</th>
                                     <th>Jumlah Hari</th>
-                                    <th>Trainer</th>
+                                    @if ($title !== 'List Komisi Trainer')
+                                        <th>Trainer</th>
+                                    @else
+                                        <th>Total</th>
+                                    @endif
                                     <th>Status</th>
                                     <th>Waktu Create</th>
                                     <th>Waktu Update</th>
@@ -63,10 +92,17 @@
                                     <tr class="text-black table-row"
                                         data-id="/AplikasiMonitoring/komisi-trainer/kelas-jadwal/{{ $d->id }}">
                                         <td>{{ $p + ++$key }}</td>
+                                        @if ($title === 'List Komisi Trainer')
+                                            <td>{{ request()->query('name') }}</td>
+                                        @endif
                                         <td>{{ $d->name }}</td>
                                         <td>{{ $d->jadwal_name }}</td>
                                         <td>{{ $d->day }}</td>
-                                        <td>{{ $d->trainer_names }}</td>
+                                        @if ($title !== 'List Komisi Trainer')
+                                            <td>{{ $d->trainer_names }}</td>
+                                        @else
+                                            <td>{{ number_format($d->total_commission) }}</td>
+                                        @endif
                                         <td>{{ $d->status }}</td>
                                         <td>{{ $d->created_at }}</td>
                                         <td>{{ $d->updated_at }}</td>
@@ -106,6 +142,25 @@
         $(document).ready(function() {
             $('#class_name').select2()
             $('#kelas_id').select2()
+            $('#name').select2()
+
+            const year = @json(request()->query('year')) ?? null;
+            const name = @json(request()->query('name')) ?? null;
+            const kelas_id = @json(request()->query('kelas_id')) ?? null;
+            const class_name = @json(request()->query('class_name')) ?? null;
+            if (name) {
+                $(`#name`).val(name).trigger("change")
+            }
+            if (kelas_id) {
+                $(`#kelas_id`).val(kelas_id).trigger("change")
+            }
+            if (class_name) {
+                $(`#class_name`).val(class_name).trigger("change")
+            }
+            if (year) {
+                $(`#year`).val(year)
+            }
+
         })
     </script>
 @endpush

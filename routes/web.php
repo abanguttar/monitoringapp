@@ -153,6 +153,9 @@ Route::prefix("AplikasiMonitoring")->group(function () {
             Route::get('kelas-jadwal', 'indexKelasJadwal')->middleware('prms:22');
             Route::get('kelas-jadwal/{id}/edit', 'editKelasJadwal')->middleware('prms:22');
             Route::post('kelas-jadwal/{id}/edit', 'updateKelasJadwal')->middleware('prms:22');
+            Route::get('kelas-jadwal/{id}/payment', 'editPaymentKelasJadwal')->middleware('prms:22');
+            Route::post('kelas-jadwal/{id}/payment', 'updatePaymentKelasJadwal')->middleware('prms:22');
+            Route::get('list-komisi', 'indexKomisiTrainer')->middleware('prms:22');
         });
 
         // Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

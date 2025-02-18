@@ -153,8 +153,8 @@ class TrainerController extends Controller
                 'name' => $x,
             ];
         }, array_unique(array_column(json_decode($kelas, true), 'name')));
-
-        return view("$this->path/index-kelas", compact('title', 'navbar', 'datas', 'kelas', 'listClassName'));
+        $trainers = null;
+        return view("$this->path/index-kelas", compact('title', 'navbar', 'datas', 'kelas', 'listClassName', 'trainers'));
     }
 
 
@@ -169,6 +169,21 @@ class TrainerController extends Controller
             ->where('transaction_kelas_id', $id)
             ->get();
         // dd($transaction_kelas, $pivots);
+        $trainers = $this->trainer::get();
+
+        return view("$this->path/edit", compact('title', 'navbar', 'transaction_kelas', 'pivots', 'trainers'));
+    }
+
+
+    public function editPaymentKelasJadwal($id)
+    {
+        $title = 'Edit Payment Kelas & Jadwal';
+        $navbar = "komisi-trainer-kelas-jadwal";
+        $transaction_kelas = $this->db::table('transaction_kelas as tk')
+            ->where('tk.id', $id)->first();
+        $pivots = $this->db::table('pivot_kelas as pk')
+            ->where('transaction_kelas_id', $id)
+            ->get();
         $trainers = $this->trainer::get();
 
         return view("$this->path/edit", compact('title', 'navbar', 'transaction_kelas', 'pivots', 'trainers'));
@@ -191,6 +206,7 @@ class TrainerController extends Controller
     public function updateKelasJadwal(StoreKomisiTrainerRequest $request, $id)
     {
         $data = $request->validated();
+        // dd($data['trainer_2'][1]);
         $tk =  $this->db::table('transaction_kelas')->where('id', $id)->first();
 
         if ($data['type'] === 'minimum') {
@@ -213,18 +229,18 @@ class TrainerController extends Controller
                 'scheme' => ucwords($data['type'])
             ]);
         } else {
-            $xp1 = explode('|', $data['trainer_1']);
+            $xp1 = explode('|', $data['trainer_1'][$data['day']]);
             $trainer_id_1 = $xp1[0];
             $trainer_name_1 = $xp1[1];
-            $commission_1 = $data['komisi_1'];
+            $commission_1 = $data['komisi_1'][$data['day']];
             $trainer_name_2 = null;
             $trainer_id_2 = null;
             $commission_2 = null;
-            if ($data['trainer_2']) {
-                $xp2 = explode('|', $data['trainer_2']);
+            if ($data['trainer_2'][$data['day']]) {
+                $xp2 = explode('|', $data['trainer_2'][$data['day']]);
                 $trainer_id_2 = $xp2[0];
                 $trainer_name_2 = $xp2[1];
-                $commission_2 = $data['komisi_2'];
+                $commission_2 = $data['komisi_2'][$data['day']];
             }
             $this->db::table('pivot_kelas')->where('transaction_kelas_id', $id)
                 ->where('day_number', $data['day'])
@@ -277,6 +293,73 @@ class TrainerController extends Controller
         $this->successCreate("Berhasil memperbarui data");
         return redirect("/AplikasiMonitoring/komisi-trainer/kelas-jadwal/$id/edit");
     }
+
+    public function updatePaymentKelasJadwal(Request $request, $id)
+    {
+        $this->db::table('transaction_kelas')->where('id', $id)->update([
+            'status' => $request->status,
+        ]);
+        $this->successCreate("Berhasil memperbarui data");
+        return redirect("/AplikasiMonitoring/komisi-trainer/kelas-jadwal/$id/payment");
+    }
+
+
+
+
+    public function indexKomisiTrainer(Request $request)
+    {
+        $title = 'List Komisi Trainer';
+        $navbar = 'komisi-trainer-list-komisi';
+        $query = $this->db::table('transaction_kelas as tk')
+            ->leftJoin("kelas as k", 'tk.kelas_id', '=', 'k.id')
+            ->select('tk.*', 'k.name', 'k.jadwal_name')
+            ->selectRaw('(SELECT SUM(COALESCE(commission_1, 0)) + SUM(COALESCE(commission_2,0)) FROM pivot_kelas AS pk WHERE  
+           pk.kelas_id = k.id
+            AND
+            pk.trainer_name_1 = ? OR pk.trainer_name_2 = ? ) AS total_commission ', [$request->name, $request->name]);
+
+        $query_total =  $this->db::table('pivot_kelas');
+
+        if (!empty($request->name)) {
+            $query->where('tk.trainer_names',  'LIKE', "%$request->name%");
+            $query_total->where(function ($q) use ($request) {
+                $q->where('trainer_name_1', $request->name)
+                    ->orWhere('trainer_name_2', $request->name);
+            });
+        } else {
+            $query->whereYear('tk.created_at', 1990);
+        }
+
+        if (!empty($request->year)) {
+            $query->whereYear('tk.created_at', $request->year);
+            $datas = $query->paginate()->appends(request()->query());
+            $query_total = $query_total->whereYear('created_at', $request->year);
+            $total = $query_total->selectRaw("SUM(COALESCE(commission_1,0)) + SUM(COALESCE(commission_2,0)) AS total")->first();
+            // $total_2 = $query_total->sum('commission_2');
+            // dd($total);
+            $total = $total->total;
+        } else {
+            $query->whereYear('tk.created_at', 1990);
+            $datas = $query->paginate()->appends(request()->query());
+            $total = null;
+        }
+        // dd($datas);
+
+        $trainers = $this->trainer::get();
+        $kelas = null;
+        $listClassName = null;
+        $trainers = array_map(function ($x) {
+            return (object) [
+                'id' => $x,
+                'name' => $x,
+            ];
+        }, array_unique(array_column(json_decode($trainers, true), 'name')));
+
+
+        return view("$this->path/index-kelas", compact('title', 'navbar', 'datas', 'kelas', 'listClassName', 'trainers', 'total'));
+    }
+
+
 
     /**
      * Show the form for editing the specified resource.

@@ -37,7 +37,9 @@
         <input type="hidden" name="type" value="{{ $obj->type }}">
         <input type="hidden" name="scheme" value="Minimum">
     </div>
-    <div class="flex justify-end">
-        <button type="submit" class="btn btn-sm btn-error text-white me-5">Simpan</button>
-    </div>
+    @if ($title !== 'Edit Payment Kelas & Jadwal')
+        <div class="flex justify-end">
+            <button type="submit" class="btn btn-sm btn-error text-white me-5">Simpan</button>
+        </div>
+    @endif
 </form>
