@@ -209,78 +209,70 @@ class TrainerController extends Controller
         // dd($data['trainer_2'][1]);
         $tk =  $this->db::table('transaction_kelas')->where('id', $id)->first();
 
-        if ($data['type'] === 'minimum') {
-            $xp = explode('|', $data['trainer']);
-            $trainer_id = $xp[0];
-            $trainer_name = $xp[1];
-            $day_numbers = [];
-            for ($i = 1; $i <= $tk->day; $i++) {
-                $day_numbers[] = $i;
-            }
-            $commission = $data['komisi'] / $tk->day;
 
-            $this->updatePivotKelas($id, $day_numbers, $commission, $trainer_id, $trainer_name);
+        $xp1 = explode('|', $data['trainer_1'][$data['day']]);
+        $trainer_id_1 = $xp1[0];
+        $trainer_name_1 = $xp1[1];
+        $commission_1 = $data['komisi_1'][$data['day']];
+        $trainer_name_2 = null;
+        $trainer_id_2 = null;
+        $commission_2 = null;
+        if ($data['trainer_2'][$data['day']]) {
+            $xp2 = explode('|', $data['trainer_2'][$data['day']]);
+            $trainer_id_2 = $xp2[0];
+            $trainer_name_2 = $xp2[1];
+            $commission_2 = $data['komisi_2'][$data['day']];
+        }
+        $this->db::table('pivot_kelas')->where('transaction_kelas_id', $id)
+            ->where('day_number', $data['day'])
+            ->update([
+                'trainer_id_1' => $trainer_id_1,
+                'trainer_name_1' => $trainer_name_1,
+                'commission_1' => $commission_1,
+                'trainer_id_2' => $trainer_id_2,
+                'trainer_name_2' => $trainer_name_2,
+                'commission_2' => $commission_2,
+                'updated_at' => Carbon::now()
+            ]);
+        $t_com_1 =  $this->db::table('pivot_kelas')->where('transaction_kelas_id', $id)->sum('commission_1');
+        $t_com_2 =  $this->db::table('pivot_kelas')->where('transaction_kelas_id', $id)->sum('commission_2');
+        $sumTotal = $t_com_1 + $t_com_2;
+        $pivots = $this->db::table('pivot_kelas')->where('transaction_kelas_id', $id)->get();
+
+        $array_names = [];
+        $array_ids = [];
+        foreach ($pivots as $piv) {
+            array_push($array_names, $piv->trainer_name_1, $piv->trainer_name_2);
+            array_push($array_ids, $piv->trainer_id_1, $piv->trainer_id_2);
+        }
+
+        array_push($array_names, $trainer_name_1);
+        array_push($array_ids, $trainer_id_1);
+        if ($trainer_name_2) {
+            array_push($array_names, $trainer_name_2);
+        }
+        if ($trainer_id_2) {
+            array_push($array_ids, $trainer_id_2);
+        }
+        $array_names =   array_filter(array_unique($array_names), function ($x) {
+            return $x;
+        });
+        $array_ids = array_filter(array_unique($array_ids), function ($x) {
+            return $x;
+        });
+        $trainer_names = implode(', ', $array_names);
+        $trainer_ids = implode(', ', $array_ids);
+
+        if ($data['type'] === 'minimum') {
 
             $this->db::table('transaction_kelas')->where('id', $id)->update([
-                'trainer_names' => implode(', ', [$trainer_name]),
-                'trainer_ids' => implode(', ', [$trainer_id]),
-                'total' => $data['komisi'],
-                'status' => 'pending',
+                'trainer_names' => $trainer_names,
+                'trainer_ids' => $trainer_ids,
+                'total' => $sumTotal,
+                'status' => 'done',
                 'scheme' => ucwords($data['type'])
             ]);
         } else {
-            $xp1 = explode('|', $data['trainer_1'][$data['day']]);
-            $trainer_id_1 = $xp1[0];
-            $trainer_name_1 = $xp1[1];
-            $commission_1 = $data['komisi_1'][$data['day']];
-            $trainer_name_2 = null;
-            $trainer_id_2 = null;
-            $commission_2 = null;
-            if ($data['trainer_2'][$data['day']]) {
-                $xp2 = explode('|', $data['trainer_2'][$data['day']]);
-                $trainer_id_2 = $xp2[0];
-                $trainer_name_2 = $xp2[1];
-                $commission_2 = $data['komisi_2'][$data['day']];
-            }
-            $this->db::table('pivot_kelas')->where('transaction_kelas_id', $id)
-                ->where('day_number', $data['day'])
-                ->update([
-                    'trainer_id_1' => $trainer_id_1,
-                    'trainer_name_1' => $trainer_name_1,
-                    'commission_1' => $commission_1,
-                    'trainer_id_2' => $trainer_id_2,
-                    'trainer_name_2' => $trainer_name_2,
-                    'commission_2' => $commission_2,
-                    'updated_at' => Carbon::now()
-                ]);
-            $t_com_1 =  $this->db::table('pivot_kelas')->where('transaction_kelas_id', $id)->sum('commission_1');
-            $t_com_2 =  $this->db::table('pivot_kelas')->where('transaction_kelas_id', $id)->sum('commission_2');
-            $sumTotal = $t_com_1 + $t_com_2;
-            $pivots = $this->db::table('pivot_kelas')->where('transaction_kelas_id', $id)->get();
-
-            $array_names = [];
-            $array_ids = [];
-            foreach ($pivots as $piv) {
-                array_push($array_names, $piv->trainer_name_1, $piv->trainer_name_2);
-                array_push($array_ids, $piv->trainer_id_1, $piv->trainer_id_2);
-            }
-
-            array_push($array_names, $trainer_name_1);
-            array_push($array_ids, $trainer_id_1);
-            if ($trainer_name_2) {
-                array_push($array_names, $trainer_name_2);
-            }
-            if ($trainer_id_2) {
-                array_push($array_ids, $trainer_id_2);
-            }
-            $array_names =   array_filter(array_unique($array_names), function ($x) {
-                return $x;
-            });
-            $array_ids = array_filter(array_unique($array_ids), function ($x) {
-                return $x;
-            });
-            $trainer_names = implode(', ', $array_names);
-            $trainer_ids = implode(', ', $array_ids);
 
             $this->db::table('transaction_kelas')->where('id', $id)->update([
                 'trainer_names' => $trainer_names,
@@ -290,6 +282,15 @@ class TrainerController extends Controller
                 'scheme' => ucwords($data['type'])
             ]);
         }
+
+
+
+        if ($tk->day == $data['day']) {
+            $this->db::table('transaction_kelas')->where('id', $id)->update([
+                'status' => 'done',
+            ]);
+        }
+
         $this->successCreate("Berhasil memperbarui data");
         return redirect("/AplikasiMonitoring/komisi-trainer/kelas-jadwal/$id/edit");
     }
@@ -313,10 +314,14 @@ class TrainerController extends Controller
         $query = $this->db::table('transaction_kelas as tk')
             ->leftJoin("kelas as k", 'tk.kelas_id', '=', 'k.id')
             ->select('tk.*', 'k.name', 'k.jadwal_name')
-            ->selectRaw('(SELECT SUM(COALESCE(commission_1, 0)) + SUM(COALESCE(commission_2,0)) FROM pivot_kelas AS pk WHERE  
+            ->selectRaw('(SELECT SUM(COALESCE(commission_1, 0)) FROM pivot_kelas AS pk WHERE  
            pk.kelas_id = k.id
             AND
-            pk.trainer_name_1 = ? OR pk.trainer_name_2 = ? ) AS total_commission ', [$request->name, $request->name]);
+            pk.trainer_name_1 = ? ) AS total_1', [$request->name])
+            ->selectRaw('(SELECT SUM(COALESCE(commission_2, 0)) FROM pivot_kelas AS pk WHERE  
+           pk.kelas_id = k.id
+            AND
+            pk.trainer_name_2 = ? ) AS total_2', [$request->name]);
 
         $query_total =  $this->db::table('pivot_kelas');
 

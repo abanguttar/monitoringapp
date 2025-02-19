@@ -44,6 +44,7 @@
                             <div class="ml-2 mt-3">
                                 @if ($title !== 'List Komisi Trainer')
                                     <button type="button" class="btn btn-primary btn-sm" id="btn-edit">Ubah</button>
+                                @else
                                     <button type="button" class="btn btn-success btn-sm" id="btn-payment">Ubah Status
                                         Pembayaran</button>
                                 @endif
@@ -101,7 +102,7 @@
                                         @if ($title !== 'List Komisi Trainer')
                                             <td>{{ $d->trainer_names }}</td>
                                         @else
-                                            <td>{{ number_format($d->total_commission) }}</td>
+                                            <td>{{ number_format($d->total_1 + $d->total_2) }}</td>
                                         @endif
                                         <td>{{ $d->status }}</td>
                                         <td>{{ $d->created_at }}</td>

@@ -22,34 +22,34 @@ class StoreKomisiTrainerRequest extends FormRequest
     public function rules(): array
     {
 
-        if ($this->type === 'minimum') {
-            $rules =  [
-                'trainer' => 'required',
-                'komisi' => 'required|numeric',
-                'type' => 'required',
+        // if ($this->type === 'minimum') {
+        //     $rules =  [
+        //         'trainer' => 'required',
+        //         'komisi' => 'required|numeric',
+        //         'type' => 'required',
 
-            ];
-        } else {
-            $day = $this->day;
+        //     ];
+        // } else {
+        $day = $this->day;
 
-            $rules =  [
-                "trainer_1.$day" => "required",
-                "komisi_1.$day" => "required|numeric",
-                "trainer_2.$day" => "nullable",
-                "komisi_2.$day" => "nullable|numeric",
-                "type" => "required",
-                "day" => 'required',
+        $rules =  [
+            "trainer_1.$day" => "required",
+            "komisi_1.$day" => "required|numeric",
+            "trainer_2.$day" => "nullable",
+            "komisi_2.$day" => "nullable|numeric",
+            "type" => "required",
+            "day" => 'required',
 
-            ];
-            $rules["trainer_2.$day"] = "nullable";
-            $rules["komisi_2.$day"] = "nullable|numeric";
-            if ($this->komisi_2[$day]) {
-                $rules["trainer_2.$day"] = "required";
-            }
-            if ($this->trainer_2[$day]) {
-                $rules["komisi_2.$day"] = "required|numeric";
-            }
+        ];
+        $rules["trainer_2.$day"] = "nullable";
+        $rules["komisi_2.$day"] = "nullable|numeric";
+        if ($this->komisi_2[$day]) {
+            $rules["trainer_2.$day"] = "required";
         }
+        if ($this->trainer_2[$day]) {
+            $rules["komisi_2.$day"] = "required|numeric";
+        }
+        // }
         return $rules;
     }
 

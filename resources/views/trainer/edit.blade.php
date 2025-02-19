@@ -101,15 +101,34 @@
 
                         <div id="Minimum-scheme" class="mt-10 container-scheme hidden">
                             <h5 class="ms-4 font-bold text-xl text-black">Skema Minimum</h5>
+                            <form action="" method="POST" class="mt-5 bg-neutral-100 shadow border mx-5 p-4 ">
+                                @include('components/scheme-2', [
+                                    'obj' => (object) [
+                                        'name' => 'trainer_1',
+                                        'commission' => 'komisi_1',
+                                        'day_number' => 'day-1-min',
+                                        'day' => '1',
+                                        'total' => null,
+                                    ],
+                                ])
+                                @include('components/scheme-2', [
+                                    'obj' => (object) [
+                                        'name' => 'trainer_2',
+                                        'commission' => 'komisi_2',
+                                        'day_number' => 'day-2-1-min',
+                                        'day' => '1',
+                                        'total' => null,
+                                    ],
+                                ])
 
-                            @include('components/scheme', [
-                                'obj' => (object) [
-                                    'name' => 'trainer',
-                                    'commission' => 'komisi',
-                                    'type' => 'minimum',
-                                    'total' => $transaction_kelas->total,
-                                ],
-                            ])
+                                <div class="flex justify-end">
+                                    <input type="hidden" name="type" value="minimum">
+                                    <input type="hidden" name="scheme" value="Minimum">
+                                    <input type="hidden" name="day" value="1">
+                                    <button type="submit"
+                                        class="btn btn-sm btn-error text-white me-5 @if ($transaction_kelas->status === 'done') btn-disabled @endif ">Simpan</button>
+                                </div>
+                            </form>
                         </div>
                         <form action="" method="POST">
                             @csrf
@@ -133,8 +152,8 @@
                                                 'value' => 'pending',
                                             ],
                                             (object) [
-                                                'title' => 'Terbayar',
-                                                'value' => 'terbayar',
+                                                'title' => 'Done',
+                                                'value' => 'Done',
                                             ],
                                         ],
                                         'data' => $transaction_kelas ?? null,
@@ -172,44 +191,92 @@
         })
     </script>
 
-    @for ($i = 1; $i <= $transaction_kelas->day; $i++)
-        <script>
-            $(document).ready(function() {
-                let i = @json($i);
-                const cb_vals = @json(old('trainer_1.' . $i)) ?? null;
-                const cb_vals2 = @json(old('trainer_2.' . $i)) ?? null;
-
-                $(`#day-${i}`).select2({
-                    data: data_trainers
-                })
-                $(`#day-2-${i}`).select2({
-                    data: data_trainers
-                })
-                if (cb_vals) {
-                    $(`#day-${i}`).val(cb_vals).trigger("change")
-                }
-                if (cb_vals2) {
-                    $(`#day-2-${i}`).val(cb_vals).trigger("change")
-                }
-            })
-        </script>
-        @if (isset($pivots_array[$i]))
+    @if ($transaction_kelas->status && $transaction_kelas->scheme === 'Normal')
+        @for ($i = 1; $i <= $transaction_kelas->day; $i++)
             <script>
                 $(document).ready(function() {
                     let i = @json($i);
-                    const array = @json($pivots_array[$i]) ?? null;
-                    let vals = array[0] ?? null;
-                    let vals_2 = array[1] ?? null;
-                    if (vals) {
-                        $(`#day-${i}`).val(vals).trigger("change")
+                    const cb_vals = @json(old('trainer_1.' . $i)) ?? null;
+                    const cb_vals2 = @json(old('trainer_2.' . $i)) ?? null;
+
+                    $(`#day-${i}`).select2({
+                        data: data_trainers
+                    })
+                    $(`#day-2-${i}`).select2({
+                        data: data_trainers
+                    })
+                    if (cb_vals) {
+                        $(`#day-${i}`).val(cb_vals).trigger("change")
                     }
-                    if (vals_2) {
-                        $(`#day-2-${i}`).val(vals_2).trigger("change")
+                    if (cb_vals2) {
+                        $(`#day-2-${i}`).val(cb_vals).trigger("change")
                     }
                 })
             </script>
-        @endif
-    @endfor
+            @if (isset($pivots_array[$i]))
+                <script>
+                    $(document).ready(function() {
+                        let i = @json($i);
+                        const array = @json($pivots_array[$i]) ?? null;
+                        let vals = array[0] ?? null;
+                        let vals_2 = array[1] ?? null;
+                        if (vals) {
+                            $(`#day-${i}`).val(vals).trigger("change")
+                        }
+                        if (vals_2) {
+                            $(`#day-2-${i}`).val(vals_2).trigger("change")
+                        }
+                    })
+                </script>
+            @endif
+        @endfor
+    @else
+        @for ($i = 1; $i <= 1; $i++)
+            <script>
+                $(document).ready(function() {
+                    let i = @json($i);
+                    const cb_vals = @json(old('trainer_1.' . $i)) ?? null;
+                    const cb_vals2 = @json(old('trainer_2.' . $i)) ?? null;
+
+                    $(`#day-${i}-min`).select2({
+                        data: data_trainers
+                    })
+                    $(`#day-2-${i}-min`).select2({
+                        data: data_trainers
+                    })
+                    if (cb_vals) {
+                        $(`#day-${i}-min`).val(cb_vals).trigger("change")
+                    }
+                    if (cb_vals2) {
+                        $(`#day-2-${i}-min`).val(cb_vals).trigger("change")
+                    }
+
+                })
+            </script>
+            @if (isset($pivots_array[$i]))
+                <script>
+                    $(document).ready(function() {
+                        let i = @json($i);
+                        let pivot = @json($pivots[0]);
+                        const array = @json($pivots_array[$i]) ?? null;
+                        let vals = array[0] ?? null;
+                        let vals_2 = array[1] ?? null;
+                        console.log({
+                            pivot
+                        });
+                        if (vals) {
+                            $(`#day-${i}-min`).val(vals).trigger("change")
+                            $(`input[name='komisi_1[${i}]']`).val(pivot.commission_1 ?? 0)
+                        }
+                        if (vals_2) {
+                            $(`#day-2-${i}-min`).val(vals_2).trigger("change")
+                            $(`input[name='komisi_2[${i}]']`).val(pivot.commission_2 ?? 0)
+                        }
+                    })
+                </script>
+            @endif
+        @endfor
+    @endif
 
 
 
@@ -220,17 +287,25 @@
         <script>
             $(document).ready(function() {
 
-                if (transaction_kelas.scheme === 'Minimum') {
-                    $('#trainer').select2({
-                        data: data_trainers
-                    })
-                    const value = `${transaction_kelas.trainer_ids+"|"+transaction_kelas.trainer_names}`;
-                    console.log({
-                        value
-                    });
+                // if (transaction_kelas.scheme === 'Minimum') {
+                //     $('#trainer').select2({
+                //         data: data_trainers
+                //     })
+                //     const value = `${transaction_kelas.trainer_ids+"|"+transaction_kelas.trainer_names}`;
 
-                    $(`#trainer`).val(value).trigger("change")
-                }
+                //     console.log({
+                //         value,
+                //     });
+
+                //     $(`#day-1-min`).select2({
+                //         data: data_trainers
+                //     })
+
+                //     $(`#day-2-1-min`).select2({
+                //         data: data_trainers
+                //     })
+
+                // }
                 const scheme = @json($transaction_kelas->scheme);
                 $('#scheme').val(scheme)
                 $('.container-scheme').addClass('hidden')
@@ -252,15 +327,19 @@
                     $(`#${scheme}-scheme`).removeClass('hidden');
                 }
 
-                $('#trainer').select2({
+                $(`#day-1-min`).select2({
                     data: data_trainers
                 })
 
-                const trainer = @json(old('trainer')) ?? null;
+                $(`#day-2-1-min`).select2({
+                    data: data_trainers
+                })
 
-                if (trainer) {
-                    $(`#trainer`).val(trainer).trigger("change")
-                }
+                // const trainer = @json(old('trainer')) ?? null;
+
+                // if (trainer) {
+                //     $(`#trainer`).val(trainer).trigger("change")
+                // }
 
             })
         </script>
